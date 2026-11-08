@@ -47,6 +47,8 @@
   .feedback{margin-top:16px;min-height:24px;color:var(--muted)}
   .feedback b{color:var(--ink)}
   .feedback a{color:var(--gold)}
+  .feedback .meta{margin:0 0 8px;font-size:14px;color:var(--gold)}
+  .feedback .fact{margin:0 0 10px;color:var(--ink);line-height:1.45;background:#2a231e;border-left:3px solid var(--gold);padding:10px 12px;border-radius:6px}
   .next{margin-top:14px;width:100%}
   .result{text-align:center}
   .score{font-family:"Playfair Display",serif;font-size:64px;color:var(--gold);margin:8px 0}
@@ -83,6 +85,7 @@ let QUESTIONS = [
 
 const app = document.getElementById('app');
 const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const esc = t => String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = s => Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 
 let linkMode = false;
@@ -110,7 +113,7 @@ function renderQuestion(){
       : `<button class="primary" id="play">▶ Odtwórz fragment</button><button id="stop">■ Stop</button>`}
     </div>
     <h2>Kto gra solówkę?</h2>
-    <div class="opts">${opts.map(o=>`<button class="opt" data-o="${o}">${o}</button>`).join('')}</div>
+    <div class="opts">${opts.map(o=>`<button class="opt" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>
     <div class="feedback" id="fb"></div>`;
   if(linkMode){
     document.getElementById('coverTxt').textContent = 'Fragment otworzy się w nowej karcie — nie zerkaj na tytuł 😉';
@@ -167,9 +170,12 @@ function choose(btn, q){
   });
   clearTimeout(stopTimer);
   document.getElementById('cover').classList.add('hidden');
+  const meta = [q.instrument, q.album].filter(Boolean).map(esc).join(' · ');
   document.getElementById('fb').innerHTML =
-    `${ok?'✅ Dobrze!':'❌ Nie tym razem.'} To <b>${q.answer}</b> — „${q.title}” (od ${fmt(q.start)}).
-     <a href="https://youtu.be/${q.youtube}?t=${q.start}" target="_blank" rel="noopener">YouTube ↗</a>`;
+    `<p style="margin:0 0 8px">${ok?'✅ Dobrze!':'❌ Nie tym razem.'} To <b>${esc(q.answer)}</b> — „${esc(q.title)}”</p>
+     ${meta ? `<p class="meta">${meta}</p>` : ''}
+     ${q.fact ? `<p class="fact">💡 ${esc(q.fact)}</p>` : ''}
+     <a href="https://youtu.be/${q.youtube}?t=${q.start}" target="_blank" rel="noopener">Posłuchaj całości na YouTube ↗</a>`;
   document.querySelector('.top span:last-child').textContent = 'Wynik: '+score;
   const next = document.createElement('button');
   next.className='primary next';
@@ -186,7 +192,7 @@ function renderResult(){
     <div class="top"><span>Koniec</span><span></span></div>
     <div class="score">${score} / ${n}</div>
     <p>${verdict}</p>
-    <ul class="review">${answers.map(a=>`<li>${a.ok?'✅':'❌'} <b>${a.q.answer}</b> — ${a.q.title}${a.ok?'':` <span>(twoja odp.: ${a.pick})</span>`}</li>`).join('')}</ul>
+    <ul class="review">${answers.map(a=>`<li>${a.ok?'✅':'❌'} <b>${esc(a.q.answer)}</b> — ${esc(a.q.title)}${a.ok?'':` <span>(twoja odp.: ${esc(a.pick)})</span>`}</li>`).join('')}</ul>
     <button class="primary" id="again" style="width:100%">Zagraj jeszcze raz</button></div>`;
   document.getElementById('again').onclick = start;
 }

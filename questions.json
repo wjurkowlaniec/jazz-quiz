@@ -9,7 +9,10 @@
       "Hank Mobley",
       "Lester Young",
       "Sonny Rollins"
-    ]
+    ],
+    "instrument": "saksofon tenorowy",
+    "album": "Go (Blue Note, 1962)",
+    "fact": "Dexter zagrał główną rolę w filmie „Około północy” (1986) i dostał za nią nominację do Oscara."
   },
   {
     "answer": "Hank Mobley",
@@ -19,20 +22,27 @@
     "options": [
       "Hank Mobley",
       "Sonny Rollins",
-      "Wardell Gray"
-    ]
+      "Wardell Gray",
+      "Tina Brooks"
+    ],
+    "instrument": "saksofon tenorowy",
+    "album": "Soul Station (Blue Note, 1960)",
+    "fact": "Krytyk Leonard Feather nazwał Mobleya „mistrzem wagi średniej” tenoru: brzmienie miększe niż u Rollinsa, łagodniejsze niż u Coltrane’a."
   },
   {
     "answer": "Sonny Stitt",
-    "title": "Sonny Stitt All Gods Chillun Got Rhythm",
+    "title": "All God's Chillun Got Rhythm",
     "youtube": "zBGNDKEL_KU",
-    "start": 2460,
+    "start": 41,
     "options": [
       "Sonny Stitt",
       "Charlie Rouse",
       "Lou Donaldson",
       "Dexter Gordon"
-    ]
+    ],
+    "instrument": "saksofon tenorowy",
+    "album": "Sonny Stitt / Bud Powell / J.J. Johnson (Prestige, 1949)",
+    "fact": "Stitt grał na alcie bardzo podobnie do Charliego Parkera, więc często sięgał po tenor, żeby uciec od porównań. Tu z Budem Powellem przy fortepianie."
   },
   {
     "answer": "Sonny Stitt",
@@ -44,6 +54,9 @@
       "Cannonball Adderley",
       "Phil Woods",
       "Jackie McLean"
-    ]
+    ],
+    "instrument": "saksofon altowy",
+    "album": "Constellation (Cobblestone, 1972)",
+    "fact": "Tytułowy temat napisał Charlie Parker – Stitt, ponad 20 lat po erze bebopu, gra go w zawrotnym tempie."
   }
 ]

@@ -1,8 +1,12 @@
 """Convert the quiz spreadsheet (xlsx) into questions.json for the quiz page.
 
 Usage: python scripts/sync_questions.py quiz.xlsx questions.json
-Expected columns (header row found automatically):
-  Nazwisko muzyka | Tytuł utworu | Sygnatura czasowa | Link YouTube | Link Spotify | A | B | C | D
+
+Columns (header row is found automatically, order doesn't matter):
+  Muzyk (poprawna odpowiedź) | Tytuł utworu | Sygnatura czasowa | Link YouTube | Link Spotify |
+  Błędna odpowiedź 1 | Błędna odpowiedź 2 | Błędna odpowiedź 3 | Instrument | Album (rok) | Ciekawostka
+The old layout with answer columns A–D is still understood.
+Rows without a YouTube link or a timestamp are skipped until they're filled in.
 """
 import datetime as dt
 import json
@@ -27,13 +31,11 @@ def youtube_id(link):
 
 def seconds(v):
     """Timestamp → seconds. Handles '1:29', '1:02:03', time/timedelta cells and day fractions."""
-    if v is None or v == "":
-        return 0
     if isinstance(v, dt.datetime):
         v = v.time()
     if isinstance(v, dt.time):
         h, m, s = v.hour, v.minute, v.second
-        # Excel often reads "1:29" as 1h29m; a song solo is meant as m:ss
+        # Excel often reads "1:29" as 1h29m; a solo is meant as m:ss
         return h * 60 + m if s == 0 and h > 0 else h * 3600 + m * 60 + s
     if isinstance(v, dt.timedelta):
         total = int(round(v.total_seconds()))
@@ -45,6 +47,8 @@ def seconds(v):
             return seconds(dt.timedelta(days=v))
         return int(v)
     parts = [int(p) for p in re.findall(r"\d+", str(v))]
+    if not parts:
+        return None
     if len(parts) == 1:
         return parts[0]
     if len(parts) == 2:
@@ -65,9 +69,15 @@ def main(src, dst):
                 return i
         return None
 
-    c_name, c_title = col("nazwisko", "muzyk"), col("tytuł", "tytul")
-    c_time, c_yt = col("sygnatura", "czas"), col("youtube")
-    c_opts = [i for i, h in enumerate(header) if h in ("a", "b", "c", "d", "e", "f")]
+    c_name = col("nazwisko", "muzyk", "poprawna")
+    c_title = col("tytuł", "tytul")
+    c_time = col("sygnatura", "czas")
+    c_yt = col("youtube")
+    c_instr = col("instrument")
+    c_album = col("album")
+    c_fact = col("ciekawostk", "opis", "kontekst")
+    c_wrong = [i for i, h in enumerate(header)
+               if h.startswith(("błędna", "bledna", "zła", "zla")) or h in ("a", "b", "c", "d")]
 
     questions = []
     for r in rows[header_idx + 1:]:
@@ -75,21 +85,21 @@ def main(src, dst):
         answer, vid = norm(get(c_name)), youtube_id(get(c_yt))
         raw_time = get(c_time)
         if not answer or not vid or raw_time is None or norm(raw_time) == "":
-            continue  # skip rows without a timestamp until it's filled in
-        opts = []
-        for i in c_opts:
+            continue
+        start = seconds(raw_time)
+        if start is None:
+            continue
+        opts = [answer]
+        for i in c_wrong:
             o = norm(get(i))
             if o and o not in opts:
                 opts.append(o)
-        if answer not in opts:
-            opts.insert(0, answer)
-        questions.append({
-            "answer": answer,
-            "title": norm(get(c_title)),
-            "youtube": vid,
-            "start": seconds(get(c_time)),
-            "options": opts,
-        })
+        q = {"answer": answer, "title": norm(get(c_title)), "youtube": vid, "start": start, "options": opts}
+        for key, c in (("instrument", c_instr), ("album", c_album), ("fact", c_fact)):
+            val = norm(get(c))
+            if val:
+                q[key] = val
+        questions.append(q)
 
     if not questions:
         sys.exit("No questions found — not overwriting questions.json")
