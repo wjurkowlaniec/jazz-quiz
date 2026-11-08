@@ -35,13 +35,13 @@ def seconds(v):
         v = v.time()
     if isinstance(v, dt.time):
         h, m, s = v.hour, v.minute, v.second
-        # Excel often reads "1:29" as 1h29m; a solo is meant as m:ss
-        return h * 60 + m if s == 0 and h > 0 else h * 3600 + m * 60 + s
+        # Sheets/Excel turn a typed "1:29" or "0:41" into h:mm:00; a solo timestamp is meant as m:ss
+        return h * 60 + m if s == 0 else h * 3600 + m * 60 + s
     if isinstance(v, dt.timedelta):
         total = int(round(v.total_seconds()))
         h, rest = divmod(total, 3600)
         m, s = divmod(rest, 60)
-        return h * 60 + m if s == 0 and h > 0 else total
+        return h * 60 + m if s == 0 else total
     if isinstance(v, (int, float)):
         if 0 < v < 1:  # fraction of a day
             return seconds(dt.timedelta(days=v))
@@ -54,7 +54,7 @@ def seconds(v):
     if len(parts) == 2:
         return parts[0] * 60 + parts[1]
     h, m, s = parts[:3]
-    return h * 60 + m if s == 0 and h > 0 else h * 3600 + m * 60 + s
+    return h * 60 + m if s == 0 else h * 3600 + m * 60 + s
 
 
 def main(src, dst):
