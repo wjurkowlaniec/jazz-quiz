@@ -73,8 +73,9 @@ def main(src, dst):
     for r in rows[header_idx + 1:]:
         get = lambda i: r[i] if i is not None and i < len(r) else None
         answer, vid = norm(get(c_name)), youtube_id(get(c_yt))
-        if not answer or not vid:
-            continue
+        raw_time = get(c_time)
+        if not answer or not vid or raw_time is None or norm(raw_time) == "":
+            continue  # skip rows without a timestamp until it's filled in
         opts = []
         for i in c_opts:
             o = norm(get(i))
