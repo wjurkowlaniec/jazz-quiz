@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kto gra tę solówkę? — Jazz Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14110f; --card:#1f1a17; --ink:#f3ead8; --muted:#a89a85;
+    --gold:#d9a441; --ok:#5fae6e; --bad:#c9573f; --line:#3a312a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:radial-gradient(circle at 20% 0%,#2a211a 0,var(--bg) 60%);
+    color:var(--ink);font-family:Inter,system-ui,sans-serif;display:flex;justify-content:center;padding:24px 16px}
+  main{width:100%;max-width:620px}
+  h1{font-family:"Playfair Display",serif;font-size:clamp(28px,6vw,42px);margin:8px 0 4px;line-height:1.1}
+  h1 em{color:var(--gold)}
+  .sub{color:var(--muted);margin:0 0 24px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .top{display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-bottom:14px}
+  .bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:18px}
+  .bar>i{display:block;height:100%;background:var(--gold);width:0;transition:width .3s}
+  .player-wrap{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000;margin-bottom:16px}
+  #yt{position:absolute;inset:0;width:100%;height:100%}
+  .cover{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+    background:linear-gradient(135deg,#2b2119,#120e0b);transition:opacity .4s;z-index:2}
+  .cover.hidden{opacity:0;pointer-events:none}
+  .disc{width:86px;height:86px;border-radius:50%;background:repeating-radial-gradient(#111 0 2px,#1c1c1c 2px 4px);
+    border:3px solid #000;position:relative}
+  .disc::after{content:"";position:absolute;inset:30px;border-radius:50%;background:var(--gold)}
+  .playing .disc{animation:spin 1.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .cover small{color:var(--muted)}
+  .controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:#2a231e;color:var(--ink);padding:11px 16px}
+  button:hover:not(:disabled){border-color:var(--gold)}
+  a.btn{display:inline-block;text-decoration:none;border-radius:10px;padding:11px 16px;border:1px solid var(--gold);background:var(--gold);color:#1a130c;font-weight:600}
+  button:disabled{cursor:default;opacity:.85}
+  .primary{background:var(--gold);color:#1a130c;border-color:var(--gold);font-weight:600}
+  h2{font-size:17px;margin:0 0 12px;font-weight:600}
+  .opts{display:grid;gap:10px}
+  .opt{text-align:left;padding:14px 16px;font-size:16px}
+  .opt.ok{background:var(--ok);border-color:var(--ok);color:#0d1a10}
+  .opt.bad{background:var(--bad);border-color:var(--bad)}
+  .feedback{margin-top:16px;min-height:24px;color:var(--muted)}
+  .feedback b{color:var(--ink)}
+  .feedback a{color:var(--gold)}
+  .next{margin-top:14px;width:100%}
+  .result{text-align:center}
+  .score{font-family:"Playfair Display",serif;font-size:64px;color:var(--gold);margin:8px 0}
+  .review{text-align:left;margin:18px 0;padding:0;list-style:none}
+  .review li{padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+  .review li span{color:var(--muted)}
+  .err{color:var(--bad);font-size:14px;margin-bottom:12px}
+  .err a{color:var(--gold)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Kto gra <em>tę solówkę?</em></h1>
+  <p class="sub">Posłuchaj fragmentu i zgadnij saksofonistę.</p>
+  <div class="card" id="app"></div>
+</main>
+
+<script>
+/* ====== PYTANIA — tu dopisuj kolejne ======
+   start: sekunda utworu, od której leci fragment
+   options: odpowiedzi do wyboru (kolejność jest losowana) */
+const SNIPPET_SECONDS = 30;
+const QUESTIONS = [
+  { answer:"Dexter Gordon", title:"Cheese Cake", youtube:"a9HP9p3GXg8", start:89,
+    options:["Dexter Gordon","Hank Mobley","Lester Young","Sonny Rollins"] },
+  { answer:"Hank Mobley", title:"This I Dig of You", youtube:"nJ-i3i2B9O0", start:134,
+    options:["Hank Mobley","Sonny Rollins","Wardell Gray"] },
+  { answer:"Sonny Stitt", title:"All God's Chillun Got Rhythm", youtube:"zBGNDKEL_KU", start:41,
+    options:["Sonny Stitt","Charlie Rouse","Lou Donaldson","Dexter Gordon"] },
+  { answer:"Sonny Stitt", title:"Constellation", youtube:"CZqM1hR0Cq0", start:98,
+    options:["Sonny Stitt","Cannonball Adderley","Phil Woods","Jackie McLean"] },
+];
+/* ========================================== */
+
+const app = document.getElementById('app');
+const shuffle = a => a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]);
+const fmt = s => Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+
+let linkMode = false;
+let order, idx, score, answers, player, playerReady=false, stopTimer=null, pendingPlay=false;
+
+function start(){
+  order = shuffle(QUESTIONS.map((q,i)=>i));
+  idx = 0; score = 0; answers = [];
+  renderQuestion();
+}
+
+function renderQuestion(){
+  const q = QUESTIONS[order[idx]];
+  const opts = shuffle([...new Set(q.options.map(s=>s.trim()))]);
+  app.innerHTML = `
+    <div class="top"><span>Pytanie ${idx+1} / ${QUESTIONS.length}</span><span>Wynik: ${score}</span></div>
+    <div class="bar"><i style="width:${idx/QUESTIONS.length*100}%"></i></div>
+    <div class="player-wrap">
+      <div id="yt"></div>
+      <div class="cover" id="cover"><div class="disc"></div><small id="coverTxt">Kliknij „Odtwórz fragment”</small></div>
+    </div>
+    <div id="err"></div>
+    <div class="controls">${linkMode
+      ? `<a class="btn primary" href="https://youtu.be/${q.youtube}?t=${q.start}" target="_blank" rel="noopener">▶ Otwórz fragment na YouTube (od ${fmt(q.start)})</a>`
+      : `<button class="primary" id="play">▶ Odtwórz fragment</button><button id="stop">■ Stop</button>`}
+    </div>
+    <h2>Kto gra solówkę?</h2>
+    <div class="opts">${opts.map(o=>`<button class="opt" data-o="${o}">${o}</button>`).join('')}</div>
+    <div class="feedback" id="fb"></div>`;
+  if(linkMode){
+    document.getElementById('coverTxt').textContent = 'Fragment otworzy się w nowej karcie — nie zerkaj na tytuł 😉';
+  } else {
+    document.getElementById('play').onclick = playSnippet;
+    document.getElementById('stop').onclick = stopSnippet;
+  }
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>choose(b, q));
+  createPlayer(q);
+}
+
+function createPlayer(q){
+  playerReady = false;
+  if (player) { try{player.destroy()}catch(e){} player=null; }
+  if (!window.YT || !YT.Player) return; // API jeszcze się ładuje
+  player = new YT.Player('yt', {
+    videoId: q.youtube,
+    playerVars: { start:q.start, controls:0, disablekb:1, modestbranding:1, rel:0, playsinline:1, fs:0, iv_load_policy:3 },
+    events: {
+      onReady: ()=>{ playerReady = true; if(pendingPlay){pendingPlay=false; playSnippet();} },
+      onStateChange: e=>{
+        const cover = document.getElementById('cover');
+        if(!cover) return;
+        cover.classList.toggle('playing', e.data===YT.PlayerState.PLAYING);
+        if(e.data===YT.PlayerState.PLAYING) document.getElementById('coverTxt').textContent='Słuchaj…';
+      },
+      onError: ()=>{
+        document.getElementById('err').innerHTML =
+          `<p class="err">Ten utwór nie daje się osadzić. <a href="https://youtu.be/${q.youtube}?t=${q.start}" target="_blank" rel="noopener">Posłuchaj na YouTube od ${fmt(q.start)}</a> (nie patrz na tytuł 😉)</p>`;
+      }
+    }
+  });
+}
+
+function playSnippet(){
+  const q = QUESTIONS[order[idx]];
+  if(!playerReady){ pendingPlay = true; document.getElementById('coverTxt').textContent='Ładowanie…'; return; }
+  clearTimeout(stopTimer);
+  player.seekTo(q.start, true);
+  player.playVideo();
+  if(!answers[idx]) stopTimer = setTimeout(()=>player.pauseVideo(), SNIPPET_SECONDS*1000);
+}
+function stopSnippet(){ clearTimeout(stopTimer); if(playerReady) player.pauseVideo(); }
+
+function choose(btn, q){
+  if(answers[idx]) return;
+  const pick = btn.dataset.o, ok = pick===q.answer;
+  if(ok) score++;
+  answers[idx] = {q, pick, ok};
+  app.querySelectorAll('.opt').forEach(b=>{
+    b.disabled = true;
+    if(b.dataset.o===q.answer) b.classList.add('ok');
+    else if(b===btn) b.classList.add('bad');
+  });
+  clearTimeout(stopTimer);
+  document.getElementById('cover').classList.add('hidden');
+  document.getElementById('fb').innerHTML =
+    `${ok?'✅ Dobrze!':'❌ Nie tym razem.'} To <b>${q.answer}</b> — „${q.title}” (od ${fmt(q.start)}).
+     <a href="https://youtu.be/${q.youtube}?t=${q.start}" target="_blank" rel="noopener">YouTube ↗</a>`;
+  document.querySelector('.top span:last-child').textContent = 'Wynik: '+score;
+  const next = document.createElement('button');
+  next.className='primary next';
+  next.textContent = idx+1<QUESTIONS.length ? 'Następne pytanie →' : 'Zobacz wynik';
+  next.onclick = ()=>{ stopSnippet(); idx++; idx<QUESTIONS.length ? renderQuestion() : renderResult(); };
+  app.appendChild(next);
+}
+
+function renderResult(){
+  if(player){ try{player.destroy()}catch(e){} player=null; }
+  const n = QUESTIONS.length, pct = score/n;
+  const verdict = pct===1 ? 'Uszy jak u Rudy\'ego Van Geldera.' : pct>=.5 ? 'Solidnie! Jeszcze parę płyt Blue Note i będzie komplet.' : 'Czas na wieczór z winylami.';
+  app.innerHTML = `<div class="result">
+    <div class="top"><span>Koniec</span><span></span></div>
+    <div class="score">${score} / ${n}</div>
+    <p>${verdict}</p>
+    <ul class="review">${answers.map(a=>`<li>${a.ok?'✅':'❌'} <b>${a.q.answer}</b> — ${a.q.title}${a.ok?'':` <span>(twoja odp.: ${a.pick})</span>`}</li>`).join('')}</ul>
+    <button class="primary" id="again" style="width:100%">Zagraj jeszcze raz</button></div>`;
+  document.getElementById('again').onclick = start;
+}
+
+window.onYouTubeIframeAPIReady = ()=>{ if(order && !linkMode) createPlayer(QUESTIONS[order[idx]]); };
+start();
+// Jeśli YouTube nie może się załadować (np. strona blokuje osadzanie), przełącz na linki
+setTimeout(()=>{ if(!(window.YT && YT.Player) && !answers[idx]){ linkMode = true; renderQuestion(); } }, 3500);
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
