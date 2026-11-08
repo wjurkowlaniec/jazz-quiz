@@ -1,0 +1,49 @@
+[
+  {
+    "answer": "Dexter Gordon",
+    "title": "Cheese Cake",
+    "youtube": "a9HP9p3GXg8",
+    "start": 89,
+    "options": [
+      "Dexter Gordon",
+      "Hank Mobley",
+      "Lester Young",
+      "Sonny Rollins"
+    ]
+  },
+  {
+    "answer": "Hank Mobley",
+    "title": "This I Dig of You",
+    "youtube": "nJ-i3i2B9O0",
+    "start": 134,
+    "options": [
+      "Hank Mobley",
+      "Sonny Rollins",
+      "Wardell Gray"
+    ]
+  },
+  {
+    "answer": "Sonny Stitt",
+    "title": "Sonny Stitt All Gods Chillun Got Rhythm",
+    "youtube": "zBGNDKEL_KU",
+    "start": 41,
+    "options": [
+      "Sonny Stitt",
+      "Charlie Rouse",
+      "Lou Donaldson",
+      "Dexter Gordon"
+    ]
+  },
+  {
+    "answer": "Sonny Stitt",
+    "title": "Constellation",
+    "youtube": "CZqM1hR0Cq0",
+    "start": 98,
+    "options": [
+      "Sonny Stitt",
+      "Cannonball Adderley",
+      "Phil Woods",
+      "Jackie McLean"
+    ]
+  }
+]

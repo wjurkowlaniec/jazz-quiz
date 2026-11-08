@@ -1,0 +1,51 @@
+name: Sync questions from spreadsheet
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/**"
+      - ".github/workflows/sync-questions.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-questions
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      SHEET_FILE_ID: 1yheu-RkCSLlc0kJLECST0xGOjc709jx5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install openpyxl
+
+      - name: Download spreadsheet from Google Drive
+        run: |
+          curl -fsSL "https://drive.google.com/uc?export=download&id=${SHEET_FILE_ID}" -o quiz.xlsx
+          file quiz.xlsx
+
+      - name: Build questions.json
+        run: python scripts/sync_questions.py quiz.xlsx questions.json
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- questions.json && git ls-files --error-unmatch questions.json >/dev/null 2>&1; then
+            echo "No changes"; exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add questions.json
+          git commit -m "Sync questions from spreadsheet"
+          git push

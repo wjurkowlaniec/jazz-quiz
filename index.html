@@ -69,7 +69,7 @@
    start: sekunda utworu, od której leci fragment
    options: odpowiedzi do wyboru (kolejność jest losowana) */
 const SNIPPET_SECONDS = 30;
-const QUESTIONS = [
+let QUESTIONS = [
   { answer:"Dexter Gordon", title:"Cheese Cake", youtube:"a9HP9p3GXg8", start:89,
     options:["Dexter Gordon","Hank Mobley","Lester Young","Sonny Rollins"] },
   { answer:"Hank Mobley", title:"This I Dig of You", youtube:"nJ-i3i2B9O0", start:134,
@@ -191,10 +191,27 @@ function renderResult(){
   document.getElementById('again').onclick = start;
 }
 
-window.onYouTubeIframeAPIReady = ()=>{ if(order && !linkMode) createPlayer(QUESTIONS[order[idx]]); };
-start();
+window.onYouTubeIframeAPIReady = ()=>{ if(order && idx<QUESTIONS.length && !linkMode) createPlayer(QUESTIONS[order[idx]]); };
+// Przy każdym otwarciu pobierz najnowsze pytania (synchronizowane z arkusza co 15 min)
+const QUESTIONS_URLS = [
+  'https://raw.githubusercontent.com/wjurkowlaniec/jazz-quiz/main/questions.json',
+  'questions.json'
+];
+async function loadQuestions(){
+  app.innerHTML = '<p class="sub" style="margin:0">Wczytywanie pytań…</p>';
+  for (const url of QUESTIONS_URLS){
+    try{
+      const r = await fetch(url + '?t=' + Date.now(), {cache:'no-store'});
+      if(!r.ok) continue;
+      const data = await r.json();
+      if(Array.isArray(data) && data.length){ QUESTIONS = data; break; }
+    }catch(e){}
+  }
+  start();
+}
+loadQuestions();
 // Jeśli YouTube nie może się załadować (np. strona blokuje osadzanie), przełącz na linki
-setTimeout(()=>{ if(!(window.YT && YT.Player) && !answers[idx]){ linkMode = true; renderQuestion(); } }, 3500);
+setTimeout(()=>{ if(!(window.YT && YT.Player) && answers && !answers[idx]){ linkMode = true; renderQuestion(); } }, 3500);
 </script>
 <script src="https://www.youtube.com/iframe_api"></script>
 </body>
